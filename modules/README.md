@@ -1,0 +1,1 @@
+Optionally grants the `Network Contributor` role at the subnet level to one or more user principals.
