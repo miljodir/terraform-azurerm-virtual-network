@@ -56,13 +56,12 @@ locals {
 
 module "nsgs" {
   source                    = "miljodir/nsg/azurerm"
-  version                   = ">= 1.0, < 2.0"
+  version                   = "~> 1.0"
   for_each                  = local.nsgs
   resource_group_name       = local.resource_group_name
   security_group_name       = coalesce(each.value.network_security_group_name, lower("${local.vnet_name}-${each.key}-nsg"))
   disable_microsegmentation = var.disable_microsegmentation
   custom_rules              = length(each.value["custom_rules"]) > 0 ? each.value["custom_rules"] : []
-  use_for_each              = var.nsg_use_for_each
 
   depends_on = [azurerm_subnet.subnet]
 }
