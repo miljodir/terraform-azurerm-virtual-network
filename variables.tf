@@ -87,6 +87,6 @@ variable "disable_microsegmentation" {
 
 variable "nsg_use_for_each" {
   type        = bool
-  default     = false
-  description = "Use for_each for creation of NSGs instead of count. Defaults to false."
+  default     = true
+  description = "Obsolete variable, left in place for backwards compatibility."
 }
