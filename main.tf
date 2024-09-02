@@ -56,9 +56,8 @@ locals {
 }
 
 module "nsgs" {
-  #source                    = "miljodir/nsg/azurerm"
-  #version                   = "~> 1.0"
-  source                    = "git@github.com:miljodir/terraform-azurerm-nsg?ref=4.0"
+  source                    = "miljodir/nsg/azurerm"
+  version                   = "~> 1.0"
   for_each                  = local.nsgs
   resource_group_name       = local.resource_group_name
   security_group_name       = coalesce(each.value.network_security_group_name, lower("${local.vnet_name}-${each.key}-nsg"))
