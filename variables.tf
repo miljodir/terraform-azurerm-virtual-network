@@ -30,10 +30,11 @@ variable "dns_servers" {
 variable "subnets" {
   description = "A map of subnets that should be created"
   type = map(object({
-    address_prefixes     = list(string)
-    service_endpoints    = optional(list(string))
-    identity_delegations = optional(list(string), [""])
-    delegation = optional(map(object({
+    address_prefixes                = list(string)
+    service_endpoints               = optional(list(string))
+    default_outbound_access_enabled = optional(bool, false)
+    identity_delegations            = optional(list(string), [""])
+    delegation                      = optional(map(object({
       name    = string
       actions = optional(list(string))
     })))
