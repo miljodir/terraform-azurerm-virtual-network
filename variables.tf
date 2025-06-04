@@ -34,7 +34,7 @@ variable "subnets" {
     service_endpoints               = optional(list(string))
     default_outbound_access_enabled = optional(bool, false)
     identity_delegations            = optional(list(string), [""])
-    delegation                      = optional(map(object({
+    delegation = optional(map(object({
       name    = string
       actions = optional(list(string))
     })))
