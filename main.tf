@@ -36,7 +36,7 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes                  = each.value["address_prefixes"]
   service_endpoints                 = each.value["service_endpoints"]
   private_endpoint_network_policies = "Enabled"
-  default_outbound_access_enabled   = !startswith(local.vnet_name, "p-") ? each.value["default_outbound_access_enabled"] : true
+  default_outbound_access_enabled   = !startswith(local.vnet_name, "p-") ? false : each.value["default_outbound_access_enabled"]
 
   dynamic "delegation" {
     for_each = each.value["delegation"] == null ? {} : each.value["delegation"]
