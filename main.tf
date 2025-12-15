@@ -65,6 +65,7 @@ module "nsgs" {
   security_group_name       = coalesce(each.value.network_security_group_name, lower("${local.vnet_name}-${each.key}-nsg"))
   disable_microsegmentation = var.disable_microsegmentation
   custom_rules              = length(each.value["custom_rules"]) > 0 ? each.value["custom_rules"] : []
+  location                  = local.location
 
   depends_on = [azurerm_subnet.subnet]
 }
