@@ -21,14 +21,26 @@ variable "address_space" {
   default     = []
 }
 
-variable "network_manager_id" {
-  description = "The ID of the network manager to associate with the virtual network. This value must be provided if you want to use Network Manager features with this virtual network."
+variable "ipam_pool_v4_id" {
+  description = "The ID of the Azure Network Manager IPv4 IPAM pool to associate with the virtual network."
   type        = string
   default     = null
 }
 
-variable "address_range_cidr" {
-  description = "The CIDR block to use for the address range of the virtual network. This value must be provided if you want to use Network Manager features with this virtual network."
+variable "ipam_pool_v6_id" {
+  description = "The ID of the Azure Network Manager IPv6 IPAM pool to associate with the virtual network."
+  type        = string
+  default     = null
+}
+
+variable "address_range_ipv4_cidr" {
+  description = "The CIDR block to use for the address range of the virtual network."
+  type        = list(string)
+  default     = []
+}
+
+variable "address_range_ipv6_cidr" {
+  description = "The CIDR block to use for the address range of the virtual network."
   type        = list(string)
   default     = []
 }
