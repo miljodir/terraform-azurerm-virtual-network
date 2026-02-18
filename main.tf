@@ -6,6 +6,26 @@ locals {
   vnet_name           = var.vnet_name != null ? var.vnet_name : "${var.resource_group_name}-vnet"
   location            = var.location != null && var.create_resource_group == true ? var.location : data.azurerm_resource_group.vnet[0].location
   resource_group_name = var.create_resource_group == true ? azurerm_resource_group.rg[0].name : data.azurerm_resource_group.vnet[0].name
+
+  number_of_ip_addresses = [for cidr in var.address_range_cidr : {
+      "17" = 32768
+      "18" = 16384
+      "19" = 8192
+      "20" = 4096
+      "21" = 2048
+      "22" = 1024
+      "23" = 512
+      "24" = 256
+      "25" = 128
+      "26" = 64
+      "27" = 32
+      "28" = 16
+      "29" = 8
+      "30" = 4
+      "31" = 2
+      "32" = 1
+    }[cidr]
+  ]
 }
 
 data "azurerm_resource_group" "vnet" {
@@ -23,9 +43,17 @@ resource "azurerm_virtual_network" "vnet" {
   name                = local.vnet_name
   resource_group_name = local.resource_group_name
   location            = local.location
-  address_space       = var.address_space
+  address_space       = length(var.address_space) > 0 ? var.address_space : null
   dns_servers         = var.dns_servers
   tags                = var.tags
+
+  dynamic "ip_address_pool" {
+    for_each = var.network_manager_id != null && length(local.number_of_ip_addresses) > 0 ? local.number_of_ip_addresses : []
+    content {
+      id = var.network_manager_id
+      number_of_ip_addresses = ip_address_pool.value
+    }
+  }
 }
 
 resource "azurerm_subnet" "subnet" {

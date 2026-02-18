@@ -18,6 +18,19 @@ variable "create_resource_group" {
 variable "address_space" {
   type        = list(string)
   description = "The address space that is used by the virtual network. This value must be provided"
+  default     = []
+}
+
+variable "network_manager_id" {
+  description = "The ID of the network manager to associate with the virtual network. This value must be provided if you want to use Network Manager features with this virtual network."
+  type        = string
+  default     = null
+}
+
+variable "address_range_cidr" {
+  description = "The CIDR block to use for the address range of the virtual network. This value must be provided if you want to use Network Manager features with this virtual network."
+  type        = list(string)
+  default     = []
 }
 
 # If no values specified, this defaults to Azure DNS 
