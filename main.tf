@@ -6,37 +6,6 @@ locals {
   vnet_name           = var.vnet_name != null ? var.vnet_name : "${var.resource_group_name}-vnet"
   location            = var.location != null && var.create_resource_group == true ? var.location : data.azurerm_resource_group.vnet[0].location
   resource_group_name = var.create_resource_group == true ? azurerm_resource_group.rg[0].name : data.azurerm_resource_group.vnet[0].name
-
-  number_of_ipv4_addresses = [for cidr in var.address_range_ipv4_cidr : {
-      "17" = 32768
-      "18" = 16384
-      "19" = 8192
-      "20" = 4096
-      "21" = 2048
-      "22" = 1024
-      "23" = 512
-      "24" = 256
-      "25" = 128
-      "26" = 64
-      "27" = 32
-      "28" = 16
-      "29" = 8
-      "30" = 4
-      "31" = 2
-      "32" = 1
-    }[replace(cidr, "/", "")]
-  ]
-
-  number_of_ipv6_addresses = [for cidr in var.address_range_ipv6_cidr : {
-      "48" = 281474976710656
-      "56" = 1099511627776
-      "64" = 4294967296
-      "72" = 16777216
-      "80" = 65536
-      "88" = 256
-      "96" = 1
-    }[replace(cidr, "/", "")]
-  ]
 }
 
 data "azurerm_resource_group" "vnet" {
@@ -59,17 +28,17 @@ resource "azurerm_virtual_network" "vnet" {
   tags                = var.tags
 
   dynamic "ip_address_pool" {
-    for_each = var.ipam_pool_v4_id != null && length(local.number_of_ipv4_addresses) > 0 ? local.number_of_ipv4_addresses : []
+    for_each = var.ipam_pool_v4_id != null && length(var.address_space) == 0 ? [var.number_of_ipv4_addresses] : []
     content {
-      id = var.ipam_pool_v4_id
+      id                     = var.ipam_pool_v4_id
       number_of_ip_addresses = ip_address_pool.value
     }
   }
 
   dynamic "ip_address_pool" {
-    for_each = var.ipam_pool_v6_id != null && length(local.number_of_ipv6_addresses) > 0 ? local.number_of_ipv6_addresses : []
+    for_each = var.ipam_pool_v6_id != null && length(var.address_space) == 0 ? [var.number_of_ipv6_addresses] : []
     content {
-      id = var.ipam_pool_v6_id
+      id                     = var.ipam_pool_v6_id
       number_of_ip_addresses = ip_address_pool.value
     }
   }
@@ -80,10 +49,26 @@ resource "azurerm_subnet" "subnet" {
   name                              = each.key
   resource_group_name               = local.resource_group_name
   virtual_network_name              = azurerm_virtual_network.vnet.name
-  address_prefixes                  = each.value["address_prefixes"]
+  address_prefixes                  = length(var.address_space) > 0 ? each.value["address_prefixes"] : null
   service_endpoints                 = each.value["service_endpoints"]
   private_endpoint_network_policies = "Enabled"
   default_outbound_access_enabled   = each.value["default_outbound_access_enabled"]
+
+  dynamic "ip_address_pool" {
+    for_each = var.ipam_pool_v4_id != null && length(var.address_space) == 0 ? [each.value["number_of_ipv4_addresses"]] : []
+    content {
+      id                     = var.ipam_pool_v4_id
+      number_of_ip_addresses = ip_address_pool.value
+    }
+  }
+
+  dynamic "ip_address_pool" {
+    for_each = var.ipam_pool_v6_id != null && length(var.address_space) == 0 ? [each.value["number_of_ipv6_addresses"]] : []
+    content {
+      id                     = var.ipam_pool_v6_id
+      number_of_ip_addresses = ip_address_pool.value
+    }
+  }
 
   dynamic "delegation" {
     for_each = each.value["delegation"] == null ? {} : each.value["delegation"]

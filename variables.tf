@@ -33,16 +33,16 @@ variable "ipam_pool_v6_id" {
   default     = null
 }
 
-variable "address_range_ipv4_cidr" {
-  description = "The CIDR block to use for the address range of the virtual network."
-  type        = list(string)
-  default     = []
+variable "number_of_ipv4_addresses" {
+  description = "The number of IPv4 addresses to use for the address range of the virtual network."
+  type        = number
+  default     = 256 # defaults to a /24
 }
 
-variable "address_range_ipv6_cidr" {
-  description = "The CIDR block to use for the address range of the virtual network."
-  type        = list(string)
-  default     = []
+variable "number_of_ipv6_addresses" {
+  description = "The number of IPv6 addresses to use for the address range of the virtual network."
+  type        = number
+  default     = 4294967296 # defaults to a /64
 }
 
 # If no values specified, this defaults to Azure DNS 
@@ -55,7 +55,9 @@ variable "dns_servers" {
 variable "subnets" {
   description = "A map of subnets that should be created"
   type = map(object({
-    address_prefixes                = list(string)
+    address_prefixes                = optional(list(string))
+    number_of_ipv4_addresses        = optional(number, 32)        # defaults to a /27
+    number_of_ipv6_addresses        = optional(number, 4294967296) # defaults to a /64
     service_endpoints               = optional(list(string))
     default_outbound_access_enabled = optional(bool, false)
     identity_delegations            = optional(list(string), [""])
