@@ -18,6 +18,31 @@ variable "create_resource_group" {
 variable "address_space" {
   type        = list(string)
   description = "The address space that is used by the virtual network. This value must be provided"
+  default     = []
+}
+
+variable "ipam_pool_v4_id" {
+  description = "The ID of the Azure Network Manager IPv4 IPAM pool to associate with the virtual network."
+  type        = string
+  default     = null
+}
+
+variable "ipam_pool_v6_id" {
+  description = "The ID of the Azure Network Manager IPv6 IPAM pool to associate with the virtual network."
+  type        = string
+  default     = null
+}
+
+variable "number_of_ipv4_addresses" {
+  description = "The number of IPv4 addresses to use for the address range of the virtual network."
+  type        = number
+  default     = 256 # defaults to a /24
+}
+
+variable "number_of_ipv6_addresses" {
+  description = "The number of IPv6 addresses to use for the address range of the virtual network."
+  type        = number
+  default     = 4294967296 # defaults to a /64
 }
 
 # If no values specified, this defaults to Azure DNS 
@@ -30,7 +55,9 @@ variable "dns_servers" {
 variable "subnets" {
   description = "A map of subnets that should be created"
   type = map(object({
-    address_prefixes                = list(string)
+    address_prefixes                = optional(list(string))
+    number_of_ipv4_addresses        = optional(number, 32)        # defaults to a /27
+    number_of_ipv6_addresses        = optional(number, 4294967296) # defaults to a /64
     service_endpoints               = optional(list(string))
     default_outbound_access_enabled = optional(bool, false)
     identity_delegations            = optional(list(string), [""])

@@ -23,9 +23,25 @@ resource "azurerm_virtual_network" "vnet" {
   name                = local.vnet_name
   resource_group_name = local.resource_group_name
   location            = local.location
-  address_space       = var.address_space
+  address_space       = length(var.address_space) > 0 ? var.address_space : null
   dns_servers         = var.dns_servers
   tags                = var.tags
+
+  dynamic "ip_address_pool" {
+    for_each = var.ipam_pool_v4_id != null && length(var.address_space) == 0 ? [var.number_of_ipv4_addresses] : []
+    content {
+      id                     = var.ipam_pool_v4_id
+      number_of_ip_addresses = ip_address_pool.value
+    }
+  }
+
+  dynamic "ip_address_pool" {
+    for_each = var.ipam_pool_v6_id != null && length(var.address_space) == 0 ? [var.number_of_ipv6_addresses] : []
+    content {
+      id                     = var.ipam_pool_v6_id
+      number_of_ip_addresses = ip_address_pool.value
+    }
+  }
 }
 
 resource "azurerm_subnet" "subnet" {
@@ -33,10 +49,26 @@ resource "azurerm_subnet" "subnet" {
   name                              = each.key
   resource_group_name               = local.resource_group_name
   virtual_network_name              = azurerm_virtual_network.vnet.name
-  address_prefixes                  = each.value["address_prefixes"]
+  address_prefixes                  = length(var.address_space) > 0 ? each.value["address_prefixes"] : null
   service_endpoints                 = each.value["service_endpoints"]
   private_endpoint_network_policies = "Enabled"
   default_outbound_access_enabled   = each.value["default_outbound_access_enabled"]
+
+  dynamic "ip_address_pool" {
+    for_each = var.ipam_pool_v4_id != null && length(var.address_space) == 0 ? [each.value["number_of_ipv4_addresses"]] : []
+    content {
+      id                     = var.ipam_pool_v4_id
+      number_of_ip_addresses = ip_address_pool.value
+    }
+  }
+
+  dynamic "ip_address_pool" {
+    for_each = var.ipam_pool_v6_id != null && length(var.address_space) == 0 ? [each.value["number_of_ipv6_addresses"]] : []
+    content {
+      id                     = var.ipam_pool_v6_id
+      number_of_ip_addresses = ip_address_pool.value
+    }
+  }
 
   dynamic "delegation" {
     for_each = each.value["delegation"] == null ? {} : each.value["delegation"]
