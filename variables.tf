@@ -42,7 +42,7 @@ variable "number_of_ipv4_addresses" {
 variable "number_of_ipv6_addresses" {
   description = "The number of IPv6 addresses to use for the address range of the virtual network."
   type        = number
-  default     = 4294967296 # defaults to a /64
+  default     = 281474976710656 # defaults to a /48
 }
 
 # If no values specified, this defaults to Azure DNS 
