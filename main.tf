@@ -88,7 +88,7 @@ locals {
     if subnet.create_nsg == true
   }
   subnets_map = {
-    for key, subnet in azurerm_subnet.subnet : key => subnet.address_prefixes[0]
+    for key, subnet in azurerm_subnet.subnet : key => try(subnet.ip_address_pool[0].allocated_ip_address_prefixes[0], try(subnet.address_prefixes[0], ""))
   }
 }
 
