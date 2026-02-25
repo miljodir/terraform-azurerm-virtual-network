@@ -57,6 +57,7 @@ variable "subnets" {
   type = map(object({
     address_prefixes                = optional(list(string))
     number_of_ipv4_addresses        = optional(number, 32)        # defaults to a /27
+    use_ipv6_pool                   = optional(bool, false)
     number_of_ipv6_addresses        = optional(number, 4294967296) # defaults to a /64
     service_endpoints               = optional(list(string))
     default_outbound_access_enabled = optional(bool, false)

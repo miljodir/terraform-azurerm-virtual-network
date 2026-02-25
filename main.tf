@@ -55,7 +55,7 @@ resource "azurerm_subnet" "subnet" {
   default_outbound_access_enabled   = each.value["default_outbound_access_enabled"]
 
   dynamic "ip_address_pool" {
-    for_each = var.ipam_pool_v4_id != null && length(var.address_space) == 0 ? [each.value["number_of_ipv4_addresses"]] : []
+    for_each = var.ipam_pool_v4_id != null && length(var.address_space) == 0 && each.value["use_ipv6_pool"] == false ? [each.value["number_of_ipv4_addresses"]] : []
     content {
       id                     = var.ipam_pool_v4_id
       number_of_ip_addresses = ip_address_pool.value
@@ -63,7 +63,7 @@ resource "azurerm_subnet" "subnet" {
   }
 
   dynamic "ip_address_pool" {
-    for_each = var.ipam_pool_v6_id != null && length(var.address_space) == 0 ? [each.value["number_of_ipv6_addresses"]] : []
+    for_each = var.ipam_pool_v6_id != null && length(var.address_space) == 0 && each.value["use_ipv6_pool"] == true ? [each.value["number_of_ipv6_addresses"]] : []
     content {
       id                     = var.ipam_pool_v6_id
       number_of_ip_addresses = ip_address_pool.value
@@ -87,6 +87,9 @@ locals {
     for key, subnet in var.subnets : key => subnet
     if subnet.create_nsg == true
   }
+  subnets_map = {
+    for key, subnet in azurerm_subnet.subnet : key => try(subnet.ip_address_pool[0].allocated_ip_address_prefixes[0], try(subnet.address_prefixes[0], ""))
+  }
 }
 
 module "nsgs" {
@@ -98,6 +101,7 @@ module "nsgs" {
   disable_microsegmentation = var.disable_microsegmentation
   custom_rules              = length(each.value["custom_rules"]) > 0 ? each.value["custom_rules"] : []
   location                  = local.location
+  subnets                   = local.subnets_map
 
   depends_on = [azurerm_subnet.subnet]
 }
