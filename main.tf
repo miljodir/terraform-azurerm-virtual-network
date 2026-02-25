@@ -55,7 +55,7 @@ resource "azurerm_subnet" "subnet" {
   default_outbound_access_enabled   = each.value["default_outbound_access_enabled"]
 
   dynamic "ip_address_pool" {
-    for_each = var.ipam_pool_v4_id != null && length(var.address_space) == 0 ? [each.value["number_of_ipv4_addresses"]] : []
+    for_each = var.ipam_pool_v4_id != null && length(var.address_space) == 0 && each.value["use_ipv6_pool"] == false ? [each.value["number_of_ipv4_addresses"]] : []
     content {
       id                     = var.ipam_pool_v4_id
       number_of_ip_addresses = ip_address_pool.value
@@ -63,7 +63,7 @@ resource "azurerm_subnet" "subnet" {
   }
 
   dynamic "ip_address_pool" {
-    for_each = var.ipam_pool_v6_id != null && length(var.address_space) == 0 ? [each.value["number_of_ipv6_addresses"]] : []
+    for_each = var.ipam_pool_v6_id != null && length(var.address_space) == 0 && each.value["use_ipv6_pool"] == true ? [each.value["number_of_ipv6_addresses"]] : []
     content {
       id                     = var.ipam_pool_v6_id
       number_of_ip_addresses = ip_address_pool.value
