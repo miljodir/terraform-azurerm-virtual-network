@@ -109,3 +109,4 @@ resource "azurerm_subnet_route_table_association" "vnet" {
   route_table_id = each.value
   subnet_id      = local.azurerm_subnets[each.key]
 }
+
