@@ -1,16 +1,16 @@
 # Testing
 
 This module is tested with the native [`terraform test`](https://developer.hashicorp.com/terraform/language/tests)
-framework. Tests run automatically in GitHub Actions on every pull request to
-`main` (see `.github/workflows/terraform-test.yaml`).
+and `tofu test` frameworks. GitHub Actions runs both engines on every pull
+request, on pushes to `main`, and when manually dispatched (see
+`.github/workflows/terraform-test.yaml`).
 
 ## What runs in CI
 
-| Job      | Command                              | Purpose                                         |
-| -------- | ------------------------------------ | ----------------------------------------------- |
-| Format   | `terraform fmt -check -recursive`    | Consistent formatting                           |
-| Validate | `terraform init` + `terraform validate` | Syntax, types and references are valid      |
-| Test     | `terraform test`                     | Module behaviour (defaults, wiring, validation) |
+| Engine | Commands | Purpose |
+| ------ | -------- | ------- |
+| Terraform | `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `terraform test` | Formatting, configuration validity, and module behavior |
+| OpenTofu | `tofu fmt -check -recursive`, `tofu init -backend=false`, `tofu validate`, `tofu test` | The same checks, independently verified for OpenTofu compatibility |
 
 ## How the tests work
 
@@ -26,6 +26,9 @@ framework. Tests run automatically in GitHub Actions on every pull request to
   listed variable validation or precondition fails.
 - Data sources and nested modules that would need real lookups can be replaced
   with `override_data` / `override_module`.
+- The shared NSG module source uses the explicit `registry.terraform.io`
+  hostname because OpenTofu otherwise resolves an unqualified module source
+  against its own registry.
 
 - When tests run, the module is the *root* module. Terraform then rejects
   outputs that contain sensitive attributes unless they are marked
@@ -83,16 +86,16 @@ Guidelines:
 
 ## Running locally
 
-Requires Terraform >= 1.7.
+Requires Terraform >= 1.7 and OpenTofu with native test support.
 
 ```sh
 terraform init -backend=false
 terraform test            # all tests
 terraform test -verbose   # include plan output
+tofu init -backend=false
+tofu test                  # all tests
+tofu test -verbose         # include plan output
 terraform test -filter=tests/defaults.tftest.hcl
 ```
 
-Remove the copied `*_override.tf` files afterwards (they are git-ignored).
-
-If the module references internal modules over SSH, you need SSH access to
-GitHub for `terraform init` to download them.
+Remove copied `*_override.tf` files afterwards (they are git-ignored).

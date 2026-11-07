@@ -30,7 +30,6 @@ run "existing_resource_group" {
   override_data {
     target = data.azurerm_resource_group.vnet[0]
     values = {
-      name     = "rg-test"
       location = "westeurope"
     }
   }
@@ -212,6 +211,11 @@ run "delegation_and_role_assignments" {
   assert {
     condition     = tolist(keys(module.group_member)) == tolist(["delegated"])
     error_message = "Role assignments should be created for subnets with identity_delegations."
+  }
+
+  assert {
+    condition     = module.group_member["delegated"].assigned_identity_ids == ["00000000-0000-0000-0000-000000000001"]
+    error_message = "Role assignments should be created for the delegated subnet identity."
   }
 }
 

@@ -91,7 +91,7 @@ locals {
 }
 
 module "nsgs" {
-  source                    = "miljodir/nsg/azurerm"
+  source                    = "registry.terraform.io/miljodir/nsg/azurerm"
   version                   = "~> 1.0"
   for_each                  = local.nsgs
   resource_group_name       = local.resource_group_name
@@ -115,4 +115,3 @@ resource "azurerm_subnet_route_table_association" "vnet" {
   route_table_id = each.value
   subnet_id      = local.azurerm_subnets[each.key]
 }
-
