@@ -32,10 +32,12 @@ module and the internal RBAC child module on every pull request, on pushes to
   hostname in the OpenTofu job's disposable working copy because OpenTofu
   otherwise resolves an unqualified module source against its own registry.
   The original source address and downloaded module implementation are
-  unchanged. `scripts/prepare-opentofu.sh` requires the exact expected source
-  line and only changes the root module copy in the shared workflow's
-  disposable directory. This checks OpenTofu using the Terraform Registry; it
-  does not verify whether the NSG module is published in the OpenTofu Registry.
+  unchanged. `scripts/prepare-opentofu.sh` changes only the source attribute in
+  the unique `module "nsgs"` block in the shared workflow's disposable
+  directory. Its regression tests reject changed targets or sources, duplicate
+  blocks or source attributes, and commented decoys without mutating rejected
+  fixtures. This checks OpenTofu using the Terraform Registry; it does not
+  verify whether the NSG module is published in the OpenTofu Registry.
 - Role-assignment creation is tested directly in `modules/rbac_role/tests/`,
   so the root test need not rely on how an engine represents a child module
   that has no outputs.
@@ -117,6 +119,7 @@ tofu test -verbose         # include plan output
 tofu -chdir=modules/rbac_role init -backend=false -test-directory=tests
 tofu -chdir=modules/rbac_role test -test-directory=tests
 terraform test -filter=tests/defaults.tftest.hcl
+python3 scripts/tests/test_qualify_nsg_source.py
 ```
 
 Remove copied `*_override.tf` files afterwards (they are git-ignored).
