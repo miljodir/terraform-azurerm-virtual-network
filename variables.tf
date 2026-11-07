@@ -53,7 +53,7 @@ variable "dns_servers" {
 }
 
 variable "subnets" {
-  description = "A map of subnets that should be created. NSG infrastructure inbound allows are opt-in and default to false. For a conventional Application Gateway v2 subnet, allow_application_gateway_infrastructure_inbound alone enables both GatewayManager and AzureLoadBalancer rules. A network-isolated private Application Gateway v2 needs AzureLoadBalancer probes but not GatewayManager; use allow_azure_load_balancer_inbound or sufficient narrower custom probe rules. Other subnets behind an Azure Load Balancer also need probe access. These options apply only when create_nsg is true and disable_microsegmentation is false. When disable_microsegmentation is true, neither the module default DenyAllInbound nor either opt-in rule is created; custom rules remain."
+  description = "A map of subnets that should be created. Omitted or null allow_azure_load_balancer_inbound is passed unchanged to the NSG module, which enables the AzureLoadBalancer inbound rule when the effective NSG name starts with lowercase p (case-sensitive); explicit true or false overrides this default. The effective NSG name is network_security_group_name or the lowercased VNet-name-subnet-name-nsg fallback. GatewayManager is never created by the module; Application Gateway infrastructure access, if required, needs custom_rules. These defaults apply only when create_nsg is true and disable_microsegmentation is false. When disable_microsegmentation is true, neither the module default DenyAllInbound nor the load balancer rule is created; custom rules remain."
   type = map(object({
     address_prefixes                = optional(list(string))
     number_of_ipv4_addresses        = optional(number, 32) # defaults to a /27
@@ -66,10 +66,9 @@ variable "subnets" {
       name    = string
       actions = optional(list(string))
     })))
-    create_nsg                                       = optional(bool, true)
-    network_security_group_name                      = optional(string, null)
-    allow_application_gateway_infrastructure_inbound = optional(bool, false)
-    allow_azure_load_balancer_inbound                 = optional(bool, false)
+    create_nsg                       = optional(bool, true)
+    network_security_group_name      = optional(string, null)
+    allow_azure_load_balancer_inbound = optional(bool)
     custom_rules = optional(list(object({
       name                                       = optional(string, "custom_rule_name")
       description                                = optional(string)
