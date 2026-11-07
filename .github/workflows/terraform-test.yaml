@@ -2,14 +2,6 @@ name: Terraform and OpenTofu test
 
 on:
   pull_request:
-    paths:
-      - "**.tf"
-      - "**.tftest.hcl"
-      - "tests/**"
-      - "modules/**"
-      - "scripts/**"
-      - "TESTING.md"
-      - ".github/workflows/terraform-test.yaml"
   push:
     branches: [main]
     paths:
@@ -23,11 +15,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  module:
     uses: miljodir/workflow-templates/.github/workflows/terraform-test.yaml@terraform-test/v0
     with:
       engine: both
       terraform-version: "1.x"
       opentofu-version: "1.13.9"
       working-directory: "."
+      test-directory: "tests"
+      prepare-script: "scripts/prepare-opentofu.sh"
+
+  rbac-role:
+    uses: miljodir/workflow-templates/.github/workflows/terraform-test.yaml@terraform-test/v0
+    with:
+      engine: both
+      terraform-version: "1.x"
+      opentofu-version: "1.13.9"
+      working-directory: "modules/rbac_role"
       test-directory: "tests"

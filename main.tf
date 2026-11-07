@@ -91,7 +91,7 @@ locals {
 }
 
 module "nsgs" {
-  source                    = "registry.terraform.io/miljodir/nsg/azurerm"
+  source                    = "miljodir/nsg/azurerm"
   version                   = "~> 1.0"
   for_each                  = local.nsgs
   resource_group_name       = local.resource_group_name
