@@ -43,9 +43,11 @@ class QualifyNsgSourceTests(unittest.TestCase):
         )
         result = qualify_nsg_source(content)
 
-        self.assertEqual(result.count(QUALIFIED_SOURCE), 1)
-        self.assertEqual(result.count('source = "miljodir/nsg/azurerm"'), 0)
-        self.assertIn('# module "nsgs" { source = "miljodir/nsg/azurerm" }', result)
+        expected_module = self.valid.replace(
+            f'source = "{ORIGINAL_SOURCE}"',
+            f'source = "{QUALIFIED_SOURCE}"',
+        )
+        self.assertEqual(result, content.replace(self.valid, expected_module))
 
     def test_rejects_changed_module_target_without_mutating_file(self) -> None:
         content = self.valid.replace('module "nsgs"', 'module "network_security"')
