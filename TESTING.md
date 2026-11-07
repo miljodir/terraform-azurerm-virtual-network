@@ -28,8 +28,8 @@ v1.13.9 was a specifically verified release, not the CI version pin.
 - Each `run` block plans (`command = plan`) or "applies" against the mocks
   (`command = apply`) with a set of input variables, then checks the result with
   `assert` blocks.
-- Input validation is tested with `expect_failures`, which passes only when the
-  listed variable validation or precondition fails.
+- `expect_failures` can be used to verify that a variable validation or
+  precondition rejects invalid input.
 - Data sources and nested modules that would need real lookups can be replaced
   with `override_data` / `override_module`.
 - The shared NSG module source uses the explicit `registry.terraform.io`
@@ -101,13 +101,17 @@ includes only committed files and excludes uncommitted edits. Do not change the
 tracked source line for this compatibility step.
 
 ```sh
-set -e
+(
+set -euo pipefail
 terraform init -backend=false
 terraform test            # all tests
 terraform test -verbose   # include plan output
-# In Git Bash on Windows, from the repository root; the quoted filter is
-# relative to the current directory and selects the actual root test file.
-test_output="$(terraform test -no-color -filter='tests\virtual_network.tftest.hcl' 2>&1)" || {
+# Terraform's test-file filter uses platform-specific path separators.
+filter='tests/virtual_network.tftest.hcl'
+if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
+  filter='tests\virtual_network.tftest.hcl'
+fi
+test_output="$(terraform test -no-color -filter="$filter" 2>&1)" || {
   printf '%s\n' "$test_output"
   exit 1
 }
@@ -124,6 +128,7 @@ trap 'rm -rf "$tmp"' EXIT
 git archive HEAD | tar -x -C "$tmp"
 python3 "$tmp/scripts/qualify_nsg_source.py" "$tmp/main.tf"
 (
+  set -euo pipefail
   cd "$tmp"
   tofu init -backend=false
   test_output="$(tofu test -no-color 2>&1)" || {
@@ -139,6 +144,5 @@ python3 "$tmp/scripts/qualify_nsg_source.py" "$tmp/main.tf"
 tofu -chdir=modules/rbac_role init -backend=false -test-directory=tests
 tofu -chdir=modules/rbac_role test -test-directory=tests
 python3 scripts/tests/test_qualify_nsg_source.py
+)
 ```
-
-Remove copied `*_override.tf` files afterwards (they are git-ignored).
