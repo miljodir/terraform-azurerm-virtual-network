@@ -66,8 +66,8 @@ variable "subnets" {
       name    = string
       actions = optional(list(string))
     })))
-    create_nsg                       = optional(bool, true)
-    network_security_group_name      = optional(string, null)
+    create_nsg                        = optional(bool, true)
+    network_security_group_name       = optional(string, null)
     allow_azure_load_balancer_inbound = optional(bool)
     custom_rules = optional(list(object({
       name                                       = optional(string, "custom_rule_name")
