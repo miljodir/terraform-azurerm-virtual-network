@@ -56,6 +56,16 @@ subnets = {
 
 With `disable_microsegmentation = true`, neither the module default `DenyAllInbound` nor the load balancer rule is created, even if the override is true; `custom_rules` remain. Existing WAF and AKS deployments using this setting continue to rely on custom rules and Azure's built-in NSG defaults.
 
+## Custom rule source ports
+
+For each subnet's `custom_rules`, omitted or explicitly null `source_port_range`
+defaults to `"*"` (any source port). Explicit values are passed unchanged to the
+NSG module: use `"1024-2048"` for a range or `"1024, 2048-4096"` for multiple
+ports/ranges. The NSG module converts non-wildcard values into
+`source_port_ranges`, splitting comma-separated strings and trimming whitespace.
+This default does not change `destination_port_range`, `destination_port_ranges`,
+or plural address-prefix lists.
+
 ## Application Gateway custom rules
 
 Conventional Application Gateway v2 deployments that require GatewayManager TCP ports 65200-65535 must retain or add appropriate `custom_rules`; the module no longer supplies this rule. GatewayManager is infrastructure traffic to the gateway subnet, not application traffic to backend subnets. Backend traffic needs narrowly scoped custom allows from the gateway subnet to backend ports; client/listener traffic also needs appropriate custom rules.

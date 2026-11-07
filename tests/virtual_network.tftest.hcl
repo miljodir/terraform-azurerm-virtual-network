@@ -105,7 +105,6 @@ run "subnets_with_default_nsgs" {
             source_address_prefix      = "app"
             destination_address_prefix = "data"
             destination_port_range     = "1433"
-            source_port_range          = "*"
           }
         ]
       }
@@ -155,6 +154,89 @@ run "subnets_with_default_nsgs" {
   assert {
     condition     = length(module.group_member) == 0
     error_message = "No role assignments should be created without identity_delegations."
+  }
+}
+
+run "custom_rule_source_port_defaults_and_explicit_values" {
+  command = apply
+
+  variables {
+    subnets = {
+      app = {
+        address_prefixes = ["192.0.2.0/24"]
+        custom_rules = [
+          {
+            name                       = "OmittedSourcePort"
+            priority                   = 200
+            direction                  = "Inbound"
+            source_address_prefix      = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "443"
+          },
+          {
+            name                       = "NullSourcePort"
+            priority                   = 201
+            direction                  = "Inbound"
+            source_port_range          = null
+            source_address_prefix      = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "443"
+          },
+          {
+            name                       = "WildcardSourcePort"
+            priority                   = 202
+            direction                  = "Inbound"
+            source_port_range          = "*"
+            source_address_prefix      = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "443"
+          },
+          {
+            name                       = "SingleSourcePort"
+            priority                   = 203
+            direction                  = "Inbound"
+            source_port_range          = "1024-2048"
+            source_address_prefix      = "*"
+            destination_address_prefix = "*"
+            destination_port_range     = "443"
+          },
+          {
+            name                         = "MultipleSourcePorts"
+            priority                     = 204
+            direction                    = "Inbound"
+            source_port_range            = "1024, 2048-4096"
+            source_address_prefixes      = ["192.0.2.0/25", "192.0.2.128/25"]
+            destination_address_prefixes = ["198.51.100.0/24"]
+            destination_port_ranges      = ["80", "443"]
+          }
+        ]
+      }
+    }
+  }
+
+  assert {
+    condition     = alltrue([for rule in slice(var.subnets["app"].custom_rules, 0, 3) : rule.source_port_range == "*"])
+    error_message = "Omitted, null and explicit wildcard source ports must all use '*'."
+  }
+
+  assert {
+    condition     = var.subnets["app"].custom_rules[3].source_port_range == "1024-2048" && var.subnets["app"].custom_rules[4].source_port_range == "1024, 2048-4096"
+    error_message = "Explicit source port ranges and comma-separated ports must remain unchanged."
+  }
+
+  assert {
+    condition     = var.subnets["app"].custom_rules[4].destination_port_range == null && tolist(var.subnets["app"].custom_rules[4].destination_port_ranges) == tolist(["80", "443"])
+    error_message = "Plural destination ports must remain unchanged without adding a singular destination port."
+  }
+
+  assert {
+    condition     = tolist(var.subnets["app"].custom_rules[4].source_address_prefixes) == tolist(["192.0.2.0/25", "192.0.2.128/25"]) && tolist(var.subnets["app"].custom_rules[4].destination_address_prefixes) == tolist(["198.51.100.0/24"])
+    error_message = "Plural address prefixes must remain unchanged."
+  }
+
+  assert {
+    condition     = module.nsgs["app"].network_security_group_name == "rg-test-vnet-app-nsg"
+    error_message = "Custom rules must apply through the real registry NSG module with only Azure mocked."
   }
 }
 

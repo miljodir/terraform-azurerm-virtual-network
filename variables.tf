@@ -76,7 +76,7 @@ variable "subnets" {
       direction                                  = optional(string, "Any")
       access                                     = optional(string, "Deny")
       protocol                                   = optional(string, "*")
-      source_port_range                          = optional(any)
+      source_port_range                          = optional(any, "*")
       destination_port_range                     = optional(string, null)
       destination_port_ranges                    = optional(list(string), null)
       source_address_prefix                      = optional(string, null)
