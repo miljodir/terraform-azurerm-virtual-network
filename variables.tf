@@ -53,7 +53,7 @@ variable "dns_servers" {
 }
 
 variable "subnets" {
-  description = "A map of subnets that should be created. NSG infrastructure inbound allows are opt-in and default to false. Set allow_application_gateway_infrastructure_inbound for a subnet hosting Application Gateway v2; this alone enables both GatewayManager and AzureLoadBalancer infrastructure rules. Subnets behind an Azure Load Balancer must opt in with allow_azure_load_balancer_inbound. These options apply only when create_nsg is true; DenyAllInbound remains in place."
+  description = "A map of subnets that should be created. NSG infrastructure inbound allows are opt-in and default to false. For a conventional Application Gateway v2 subnet, allow_application_gateway_infrastructure_inbound alone enables both GatewayManager and AzureLoadBalancer rules. A network-isolated private Application Gateway v2 needs AzureLoadBalancer probes but not GatewayManager; use allow_azure_load_balancer_inbound or sufficient narrower custom probe rules. Other subnets behind an Azure Load Balancer also need probe access. These options apply only when create_nsg is true and disable_microsegmentation is false. When disable_microsegmentation is true, neither the module default DenyAllInbound nor either opt-in rule is created; custom rules remain."
   type = map(object({
     address_prefixes                = optional(list(string))
     number_of_ipv4_addresses        = optional(number, 32) # defaults to a /27

@@ -8,14 +8,18 @@ By default a NSG will be created and associated with the subnet(s). The NSG will
 
 ## Opt-in infrastructure inbound rules
 
-Each subnet with `create_nsg = true` defaults to denying inbound traffic unless explicitly allowed. `DenyAllInbound` remains in place; the GatewayManager and AzureLoadBalancer inbound allows are no longer enabled for every subnet.
+Each subnet with `create_nsg = true` and `disable_microsegmentation = false` defaults to denying inbound traffic unless explicitly allowed. `DenyAllInbound` remains in place; the GatewayManager and AzureLoadBalancer inbound allows are no longer enabled for every subnet.
 
 | Subnet option | Default | Use case |
 | --- | --- | --- |
-| `allow_application_gateway_infrastructure_inbound` | `false` | A subnet hosting Azure Application Gateway v2. Allows GatewayManager TCP ports 65200-65535 and AzureLoadBalancer health probes. This flag alone is sufficient; the load balancer flag is not also required. |
-| `allow_azure_load_balancer_inbound` | `false` | A subnet behind an Azure Load Balancer that needs AzureLoadBalancer health probes, without GatewayManager access. |
+| `allow_application_gateway_infrastructure_inbound` | `false` | A subnet hosting conventional Azure Application Gateway v2. Allows GatewayManager TCP ports 65200-65535 and AzureLoadBalancer health probes. This flag alone is sufficient for those infrastructure rules; the load balancer flag is not also required. |
+| `allow_azure_load_balancer_inbound` | `false` | A subnet behind an Azure Load Balancer, or hosting a network-isolated private Application Gateway v2, that needs AzureLoadBalancer health probes without GatewayManager access. |
 
 These flags apply only to module-managed NSGs. GatewayManager traffic is for the Application Gateway's infrastructure, not application traffic to backend subnets. A backend subnet reachable from Application Gateway needs narrowly scoped `custom_rules` for the gateway subnet and backend listener ports instead. Client/listener traffic into an Application Gateway subnet also requires appropriate `custom_rules`; the infrastructure flag does not allow it.
+
+With `disable_microsegmentation = true`, neither the module default `DenyAllInbound` nor either opt-in infrastructure rule is created, even if a flag is true; `custom_rules` remain. Existing WAF and AKS deployments using this setting therefore continue to rely on their custom rules and Azure's built-in NSG defaults.
+
+[Network-isolated private Application Gateway v2](https://learn.microsoft.com/en-us/azure/application-gateway/application-gateway-private-deployment#network-security-group-control) does not need a GatewayManager inbound allow, but still requires AzureLoadBalancer probe access. Use the load balancer flag only, or retain sufficient existing narrower custom probe rules; do not enable broader infrastructure allows when those rules already satisfy the deployment's requirements.
 
 ```hcl
 subnets = {
@@ -33,6 +37,8 @@ subnets = {
 }
 ```
 
-## Breaking upgrade: NSG module 2.x
+## Migration warning: minor release, changed defaults
 
-This version requires `miljodir/nsg/azurerm ~> 2.0` and depends on the NSG module 2.0 release. Upgrading removes the previously unconditional GatewayManager and AzureLoadBalancer inbound allows. Before applying the upgrade, set `allow_application_gateway_infrastructure_inbound = true` on subnets hosting Application Gateway v2, and set `allow_azure_load_balancer_inbound = true` on other subnets behind an Azure Load Balancer that require health probes. Leaving both flags unset keeps both infrastructure allows disabled. Existing custom rules and the default `DenyAllInbound` behavior are retained.
+This update is classified as a **minor release**, but changes inbound defaults and requires consumer review before applying. It requires `miljodir/nsg/azurerm ~> 1.4`, excluding older versions that lack the new inputs. The NSG module 1.4.0 release must be published before dependency resolution and Terraform validation can succeed.
+
+When `disable_microsegmentation = false`, upgrading removes the previously unconditional GatewayManager and AzureLoadBalancer inbound allows. Before applying, enable `allow_application_gateway_infrastructure_inbound` on conventional Application Gateway v2 subnets that need both infrastructure rules. For network-isolated private Application Gateway v2 or other load-balanced subnets, enable `allow_azure_load_balancer_inbound` only if sufficient narrower custom probe rules are not already present. Leaving both flags unset keeps both module infrastructure allows disabled. Existing custom rules are retained; the module default `DenyAllInbound` remains only when microsegmentation is enabled.

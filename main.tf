@@ -92,7 +92,7 @@ locals {
 
 module "nsgs" {
   source                                           = "miljodir/nsg/azurerm"
-  version                                          = "~> 2.0"
+  version                                          = "~> 1.4"
   for_each                                         = local.nsgs
   resource_group_name                              = local.resource_group_name
   security_group_name                              = coalesce(each.value.network_security_group_name, lower("${local.vnet_name}-${each.key}-nsg"))
