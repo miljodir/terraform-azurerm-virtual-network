@@ -13,6 +13,10 @@ module and the internal RBAC child module on every pull request, on pushes to
 | Terraform | `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `terraform test` | Formatting, configuration validity, and module behavior |
 | OpenTofu | `tofu fmt -check -recursive`, `tofu init -backend=false`, `tofu validate`, `tofu test` | The same checks, independently verified for OpenTofu compatibility |
 
+CI selects the latest stable OpenTofu release matching `1.x`; this is a
+floating version and can advance as new 1.x releases are published. OpenTofu
+v1.13.9 was a specifically verified release, not the CI version pin.
+
 ## How the tests work
 
 - Root module tests live in `tests/`; the internal RBAC module has a direct
@@ -41,20 +45,6 @@ module and the internal RBAC child module on every pull request, on pushes to
 - Role-assignment creation is tested directly in `modules/rbac_role/tests/`,
   so the root test need not rely on how an engine represents a child module
   that has no outputs.
-
-- When tests run, the module is the *root* module. Terraform then rejects
-  outputs that contain sensitive attributes unless they are marked
-  `sensitive = true` (consumers calling the module are not affected). Put
-  test-only override files in `tests/overrides/` named `*_override.tf`, e.g.
-
-  ```hcl
-  output "storage_account" {
-    sensitive = true
-  }
-  ```
-
-  The shared workflow copies them into the module root after validation and
-  before running tests.
 
 These are unit-style tests: they verify how the module turns inputs into
 resource configuration. They do not prove that Azure accepts the configuration;
@@ -99,26 +89,55 @@ Guidelines:
 
 ## Running locally
 
-Requires Terraform >= 1.7 and OpenTofu with native test support.
+Requires Terraform >= 1.7, OpenTofu with native test support, Python 3, and
+Git Bash on Windows for the shell examples below.
 
-The root OpenTofu suite must run from a disposable copy with the NSG module
-source qualified as `registry.terraform.io/miljodir/nsg/azurerm`; CI performs
-this guarded adjustment automatically. Do not change the tracked source line
-for this local compatibility step.
+The source-preparation regression tests run in CI as part of the OpenTofu
+preparation step. The root OpenTofu suite must run from a disposable copy with
+the NSG module source qualified as
+`registry.terraform.io/miljodir/nsg/azurerm`; CI performs this guarded
+adjustment automatically. The local recipe below uses `git archive HEAD`, so it
+includes only committed files and excludes uncommitted edits. Do not change the
+tracked source line for this compatibility step.
 
 ```sh
+set -e
 terraform init -backend=false
 terraform test            # all tests
 terraform test -verbose   # include plan output
+# In Git Bash on Windows, from the repository root; the quoted filter is
+# relative to the current directory and selects the actual root test file.
+test_output="$(terraform test -no-color -filter='tests\virtual_network.tftest.hcl' 2>&1)" || {
+  printf '%s\n' "$test_output"
+  exit 1
+}
+printf '%s\n' "$test_output"
+if ! printf '%s\n' "$test_output" | grep -Eq 'Success! [1-9][0-9]* passed'; then
+  echo "Terraform did not report any passing tests for the selected file." >&2
+  exit 1
+fi
 terraform -chdir=modules/rbac_role init -backend=false -test-directory=tests
 terraform -chdir=modules/rbac_role test -test-directory=tests
-# Run these root-module commands only in the disposable copy described above.
-tofu init -backend=false
-tofu test                  # all tests
-tofu test -verbose         # include plan output
+# Use the following in Git Bash on Windows to create the OpenTofu working copy.
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+git archive HEAD | tar -x -C "$tmp"
+python3 "$tmp/scripts/qualify_nsg_source.py" "$tmp/main.tf"
+(
+  cd "$tmp"
+  tofu init -backend=false
+  test_output="$(tofu test -no-color 2>&1)" || {
+    printf '%s\n' "$test_output"
+    exit 1
+  }
+  printf '%s\n' "$test_output"
+  if ! printf '%s\n' "$test_output" | grep -Eq 'Success! [1-9][0-9]* passed'; then
+    echo "OpenTofu did not report any passing tests for the root module." >&2
+    exit 1
+  fi
+)
 tofu -chdir=modules/rbac_role init -backend=false -test-directory=tests
 tofu -chdir=modules/rbac_role test -test-directory=tests
-terraform test -filter=tests/defaults.tftest.hcl
 python3 scripts/tests/test_qualify_nsg_source.py
 ```
 
