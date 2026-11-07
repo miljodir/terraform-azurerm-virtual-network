@@ -50,6 +50,13 @@ These are unit-style tests: they verify how the module turns inputs into
 resource configuration. They do not prove that Azure accepts the configuration;
 that still happens when a consuming workload runs `terraform plan`/`apply`.
 
+The root suite exercises the real registry NSG module with mocked Azure
+resources. Its source-port regression omits `source_port_range` in a custom rule
+and also covers explicit null, wildcard, a single range, and comma-separated
+ports alongside plural destination ports and address prefixes. Omitted/null
+source ports must default to `"*"` before reaching the dependency; explicit
+ports must remain unchanged.
+
 ## Writing a test
 
 ```hcl
