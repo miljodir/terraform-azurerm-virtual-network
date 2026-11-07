@@ -53,7 +53,7 @@ variable "dns_servers" {
 }
 
 variable "subnets" {
-  description = "A map of subnets that should be created"
+  description = "A map of subnets that should be created. NSG infrastructure inbound allows are opt-in and default to false. Set allow_application_gateway_infrastructure_inbound for a subnet hosting Application Gateway v2; this alone enables both GatewayManager and AzureLoadBalancer infrastructure rules. Subnets behind an Azure Load Balancer must opt in with allow_azure_load_balancer_inbound. These options apply only when create_nsg is true; DenyAllInbound remains in place."
   type = map(object({
     address_prefixes                = optional(list(string))
     number_of_ipv4_addresses        = optional(number, 32) # defaults to a /27
@@ -66,8 +66,10 @@ variable "subnets" {
       name    = string
       actions = optional(list(string))
     })))
-    create_nsg                  = optional(bool, true)
-    network_security_group_name = optional(string, null)
+    create_nsg                                       = optional(bool, true)
+    network_security_group_name                      = optional(string, null)
+    allow_application_gateway_infrastructure_inbound = optional(bool, false)
+    allow_azure_load_balancer_inbound                 = optional(bool, false)
     custom_rules = optional(list(object({
       name                                       = optional(string, "custom_rule_name")
       description                                = optional(string)
