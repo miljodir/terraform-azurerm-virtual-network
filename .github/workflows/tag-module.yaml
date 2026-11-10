@@ -1,14 +1,7 @@
 name: Create git tag
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
-    branches:
-      - main
-    paths:
-      - "**.tf"
-      - ".github/workflows/tag-module.yaml"
-  pull_request_target:
-    types: [closed]
+    types: [opened, synchronize, reopened, labeled, unlabeled, closed]
     branches:
       - main
     paths:
@@ -20,7 +13,9 @@ on:
 
 jobs:
   pr:
-    if: github.event_name != 'repository_dispatch'
+    if: >-
+      github.event_name == 'pull_request'
+      && (github.event.action != 'closed' || github.event.pull_request.merged == true)
     uses: miljodir/workflow-templates/.github/workflows/generate-release-metadata.yaml@generate-release-metadata/v1
     permissions:
       contents: write
