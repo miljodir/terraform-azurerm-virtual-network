@@ -11,7 +11,7 @@ module and the internal RBAC child module on every pull request, on pushes to
 The release workflow excludes the two existing `.tftest.hcl` files from release
 directory detection using `exclude-files`; they still run in the test workflow.
 The same release caller inputs apply to pull-request previews and the
-`pull_request_target` closed/merged event after this configuration is on `main`.
+`pull_request` closed/merged event after this configuration is on `main`.
 Production root and child-module files are not excluded, and their existing
 release-selection behavior is unchanged. The shared input accepts exact paths,
 not globs: add each new test file to the exclusion list in
